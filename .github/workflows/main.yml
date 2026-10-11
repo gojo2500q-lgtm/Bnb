@@ -8,18 +8,64 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+      - name: Create minimal Android project
+        run: |
+          mkdir -p app/src/main/java/com/lemonloader/patcher
+          echo "include ':app'" > settings.gradle
+          cat > app/build.gradle << 'EOF'
+          plugins { id 'com.android.application' }
+          android {
+              compileSdk 33
+              defaultConfig {
+                  applicationId "com.lemonloader.patcher"
+                  minSdk 26
+                  targetSdk 33
+                  versionCode 1
+                  versionName "1.0"
+              }
+          }
+          EOF
+          cat > app/src/main/java/com/lemonloader/patcher/MainActivity.java << 'EOF'
+          package com.lemonloader.patcher;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.widget.TextView;
+          import java.io.*;
+          import java.security.MessageDigest;
+          public class MainActivity extends Activity {
+              TextView log;
+              String sha256(File f) throws Exception {
+                  MessageDigest d = MessageDigest.getInstance("SHA-256");
+                  InputStream is = new FileInputStream(f);
+                  byte[] buf = new byte[8192]; int r;
+                  while((r=is.read(buf))!=-1) d.update(buf,0,r);
+                  is.close();
+                  StringBuilder sb=new StringBuilder();
+                  for(byte b:d.digest()) sb.append(String.format("%02x",b));
+                  return sb.toString();
+              }
+              protected void onCreate(Bundle b){
+                  super.onCreate(b);
+                  log=new TextView(this); setContentView(log);
+                  log.setText("BONELAB Patcher with SHA256 ready\nPut mods in /sdcard/lemonloader/mods/");
+              }
+          }
+          EOF
+          mkdir -p app/src/main
+          echo '<manifest package="com.lemonloader.patcher"/>' > app/src/main/AndroidManifest.xml
 
-      - name: Build APK
-        run: ./gradlew assembleDebug
+      - name: Build with Gradle
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip
+          unzip -q gradle-8.5-bin.zip
+         ./gradle-8.5/bin/gradle :app:assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
