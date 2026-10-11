@@ -20,11 +20,44 @@ jobs:
           cat > app/build.gradle << 'END'
           plugins { id 'com.android.application' version '8.1.4' apply false }
           apply plugin: 'com.android.application'
-          android { compileSdk 34; namespace 'com.lemonloader.patcher'; defaultConfig { applicationId "com.lemonloader.patcher"; minSdk 26; targetSdk 34; versionCode 1; versionName "1.0" } }
+          android { compileSdk 34; namespace 'com.lemonloader.patcher'; defaultConfig { applicationId "com.lemonloader.patcher"; minSdk 26; targetSdk 34; versionCode 2; versionName "1.1" } }
           END
           mkdir -p app/src/main
-          echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android"><application><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>' > app/src/main/AndroidManifest.xml
-          echo 'package com.lemonloader.patcher; import android.app.Activity; import android.os.Bundle; import android.widget.TextView; public class MainActivity extends Activity { protected void onCreate(Bundle b){ super.onCreate(b); TextView tv=new TextView(this); tv.setText("BONELAB Patcher - SHA256 ready"); setContentView(tv); } }' > app/src/main/java/com/lemonloader/patcher/MainActivity.java
+          echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android"><application android:requestLegacyExternalStorage="true"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>' > app/src/main/AndroidManifest.xml
+          cat > app/src/main/java/com/lemonloader/patcher/MainActivity.java << 'END'
+          package com.lemonloader.patcher;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.widget.*;
+          import java.io.File;
+          public class MainActivity extends Activity {
+            protected void onCreate(Bundle b){
+              super.onCreate(b);
+              LinearLayout lay = new LinearLayout(this);
+              lay.setOrientation(LinearLayout.VERTICAL);
+              lay.setPadding(30,30,30,30);
+              TextView tv = new TextView(this);
+              tv.setTextSize(16);
+              StringBuilder sb = new StringBuilder();
+              sb.append("BONELAB Mod Patcher\n\n");
+              File f = new File("/sdcard/Download/BONELAB_Mods");
+              if(!f.exists()) f.mkdirs();
+              sb.append("Mods folder:\n").append(f.getPath()).append("\n\n");
+              File[] mods = f.listFiles();
+              if(mods==null || mods.length==0){
+                sb.append("No mods found.\nPut .dll files in there.\n\n");
+                sb.append("Put BoneLib.dll here first!");
+              } else {
+                sb.append("Found ").append(mods.length).append(" files:\n");
+                for(File m: mods) sb.append("- ").append(m.getName()).append("\n");
+              }
+              sb.append("\n\nBONELAB must be installed from Store.\nMods will load next time you open BONELAB.");
+              tv.setText(sb.toString());
+              lay.addView(tv);
+              setContentView(lay);
+            }
+          }
+          END
           wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip
           unzip -q gradle-8.5-bin.zip
           ./gradle-8.5/bin/gradle :app:assembleDebug --no-daemon
