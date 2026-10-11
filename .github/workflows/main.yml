@@ -12,44 +12,19 @@ jobs:
       - name: Build APK
         run: |
           cat > settings.gradle << 'END'
-          pluginManagement {
-            repositories { google(); mavenCentral(); gradlePluginPortal() }
-          }
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositories { google(); mavenCentral() } }
           include ':app'
           END
           mkdir -p app/src/main/java/com/lemonloader/patcher
           cat > app/build.gradle << 'END'
           plugins { id 'com.android.application' version '8.1.4' apply false }
           apply plugin: 'com.android.application'
-          android {
-            compileSdk 34
-            namespace 'com.lemonloader.patcher'
-            defaultConfig {
-              applicationId "com.lemonloader.patcher"
-              minSdk 26
-              targetSdk 34
-              versionCode 1
-              versionName "1.0"
-            }
-          }
+          android { compileSdk 34; namespace 'com.lemonloader.patcher'; defaultConfig { applicationId "com.lemonloader.patcher"; minSdk 26; targetSdk 34; versionCode 1; versionName "1.0" } }
           END
-          cat > app/src/main/AndroidManifest.xml << 'END'
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android"><application><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>
-          END
-          cat > app/src/main/java/com/lemonloader/patcher/MainActivity.java << 'END'
-          package com.lemonloader.patcher;
-          import android.app.Activity;
-          import android.os.Bundle;
-          import android.widget.TextView;
-          public class MainActivity extends Activity {
-            protected void onCreate(Bundle b){
-              super.onCreate(b);
-              TextView tv=new TextView(this);
-              tv.setText("BONELAB Patcher\nSHA256 ready\nCheck /sdcard/lemonloader/mods/");
-              setContentView(tv);
-            }
-          }
-          END
+          mkdir -p app/src/main
+          echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android"><application><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>' > app/src/main/AndroidManifest.xml
+          echo 'package com.lemonloader.patcher; import android.app.Activity; import android.os.Bundle; import android.widget.TextView; public class MainActivity extends Activity { protected void onCreate(Bundle b){ super.onCreate(b); TextView tv=new TextView(this); tv.setText("BONELAB Patcher - SHA256 ready"); setContentView(tv); } }' > app/src/main/java/com/lemonloader/patcher/MainActivity.java
           wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip
           unzip -q gradle-8.5-bin.zip
           ./gradle-8.5/bin/gradle :app:assembleDebug --no-daemon
@@ -57,4 +32,3 @@ jobs:
         with:
           name: Patcher-APK
           path: app/build/outputs/apk/debug/app-debug.apk
-          
